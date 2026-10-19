@@ -492,7 +492,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT 100% SUPABASE ESTÁTICO -->
+    <!-- SCRIPT 100% SUPABASE DIRETO (SEM SERVER.JS) -->
     <script>
         const SUPABASE_URL = 'https://vfxaiknoawzoenodwqjf.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_aDGXBwvkdk5t-9KxgJYQ9Q_VnyMst8a';
@@ -558,7 +558,7 @@
             try {
                 const { data: config, error } = await supabaseClient.from('configuracoes').select('*').limit(1).maybeSingle();
                 if(config && !error) {
-                    const storeName = config.nome_loja || 'Burger & Cia';
+                    const storeName = config.nome_loja || config.admin_user || 'Burger & Cia';
                     const storeLogo = config.logo_url || '';
 
                     const brandEl = document.getElementById('header-brand-name');
@@ -592,13 +592,15 @@
 
             try {
                 const { data, error } = await supabaseClient
-                    .from('usuarios_admin')
+                    .from('configuracoes')
                     .select('*')
-                    .eq('usuario', usuario)
-                    .eq('senha', senha)
+                    .limit(1)
                     .maybeSingle();
 
-                if ((data && !error) || (usuario === 'admin' && senha === '123456')) {
+                const dbUser = data ? (data.admin_user || 'admin') : 'admin';
+                const dbPass = data ? (data.admin_pass || '123456') : '123456';
+
+                if ((usuario === dbUser && senha === dbPass) || (usuario === 'admin' && senha === '123456')) {
                     localStorage.setItem('admin_logged', 'true');
                     showAdminPanel();
                 } else {
@@ -1037,7 +1039,7 @@
                     resetBairroForm();
                     loadAdminBairros();
                 } else {
-                    alert('Erro ao salvar bairro.');
+                    alert('Erro ao salvar bairro: ' + error.message);
                 }
             } catch (err) {
                 console.error(err);
@@ -1285,14 +1287,14 @@
             }
 
             try {
-                const { data: existing } = await supabaseClient.from('usuarios_admin').select('id').limit(1).maybeSingle();
+                const { data: existing } = await supabaseClient.from('configuracoes').select('id').limit(1).maybeSingle();
 
                 let error;
                 if (existing && existing.id) {
-                    const res = await supabaseClient.from('usuarios_admin').update({ usuario: novoUsuario, senha: p1 }).eq('id', existing.id);
+                    const res = await supabaseClient.from('configuracoes').update({ admin_user: novoUsuario, admin_pass: p1 }).eq('id', existing.id);
                     error = res.error;
                 } else {
-                    const res = await supabaseClient.from('usuarios_admin').insert([{ usuario: novoUsuario, senha: p1 }]);
+                    const res = await supabaseClient.from('configuracoes').insert([{ admin_user: novoUsuario, admin_pass: p1 }]);
                     error = res.error;
                 }
 
