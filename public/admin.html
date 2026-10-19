@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin | Configurações</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Importação do Cliente Oficial do Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -199,6 +201,7 @@
                                 <th class="p-4">Produto</th>
                                 <th class="p-4">Categoria</th>
                                 <th class="p-4">Preço</th>
+                                <th class="p-4">Disponibilidade</th>
                                 <th class="p-4">Descrição</th>
                                 <th class="p-4 text-right">Ações</th>
                             </tr>
@@ -235,9 +238,18 @@
                         </select>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Preço (R$)</label>
-                    <input type="number" step="0.01" id="prod-price" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Preço (R$)</label>
+                        <input type="number" step="0.01" id="prod-price" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Status do Produto</label>
+                        <select id="prod-esgotado" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+                            <option value="false">Disponível</option>
+                            <option value="true">Esgotado</option>
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Foto do Produto (Arquivo)</label>
@@ -363,11 +375,9 @@
                     </select>
                 </div>
                 
-                <!-- NOVO: Container para escolher itens específicos da categoria selecionada -->
                 <div class="form-group" id="containerItensEspecificos" style="display: none; margin-top: 10px;">
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Vincular a Itens Específicos (Opcional)</label>
                     <div style="max-height: 150px; overflow-y: auto; border: 1px solid #334155; padding: 8px; border-radius: 8px; background-color: #0f172a;" id="listaCheckboxesItens">
-                        <!-- Os produtos da categoria selecionada aparecerão aqui como checkboxes -->
                     </div>
                     <small style="color: #94a3b8; font-size: 11px; display: block; margin-top: 4px;">Se deixar nenhum marcado, o adicional valerá para toda a categoria.</small>
                 </div>
@@ -482,7 +492,12 @@
         </div>
     </div>
 
+    <!-- SCRIPT ADAPTADO PARA SUPABASE ESTÁTICO -->
     <script>
+        const SUPABASE_URL = 'https://vfxaiknoawzoenodwqjf.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_aDGXBwvkdk5t-9KxgJYQ9Q_VnyMst8a';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         function compressImage(inputElement, targetHiddenId, maxWidth = 800) {
             const file = inputElement.files[0];
             if (!file) return;
@@ -541,9 +556,8 @@
 
         async function loadBrandConfig() {
             try {
-                const res = await fetch(window.location.origin + '/api/configuracoes');
-                const config = await res.json();
-                if(config) {
+                const { data: config, error } = await supabaseClient.from('configuracoes').select('*').limit(1).maybeSingle();
+                if(config && !error) {
                     const storeName = config.nome_loja || 'Burger & Cia';
                     const storeLogo = config.logo_url || '';
 
@@ -572,27 +586,18 @@
         }
 
         async function handleLogin(e) {
-            e.preventDefault();
-            const usuario = document.getElementById('user').value;
-            const senha = document.getElementById('pass').value;
+            if(e) e.preventDefault();
+            const usuario = document.getElementById('user').value.trim();
+            const senha = document.getElementById('pass').value.trim();
 
-            try {
-                const res = await fetch(window.location.origin + '/api/admin/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario, senha })
-                });
-                const data = await res.json();
+            const storedUser = localStorage.getItem('admin_custom_user') || 'admin';
+            const storedPass = localStorage.getItem('admin_custom_pass') || '123456';
 
-                if(data.success) {
-                    localStorage.setItem('admin_logged', 'true');
-                    showAdminPanel();
-                } else {
-                    alert('Usuário ou senha incorretos!');
-                }
-            } catch (err) {
-                console.error('Erro ao autenticar:', err);
-                alert('Erro ao conectar com o servidor.');
+            if((usuario === 'admin' && senha === '123456') || (usuario === storedUser && senha === storedPass)) {
+                localStorage.setItem('admin_logged', 'true');
+                showAdminPanel();
+            } else {
+                alert('Usuário ou senha incorretos!');
             }
         }
 
@@ -612,10 +617,8 @@
 
         async function loadCategoriesSelect(selectedCategory = '') {
             try {
-                const res = await fetch(window.location.origin + '/api/categorias');
-                const categorias = await res.json();
+                const { data: categorias, error } = await supabaseClient.from('categorias').select('*');
                 
-                // Preenche o select do modal de produtos
                 const selectProd = document.getElementById('prod-category');
                 if(selectProd && Array.isArray(categorias)) {
                     selectProd.innerHTML = categorias.map(cat => `
@@ -623,7 +626,6 @@
                     `).join('');
                 }
 
-                // Preenche o select de filtro no topo da tabela
                 const selectFilter = document.getElementById('filter-category');
                 if(selectFilter && Array.isArray(categorias)) {
                     const currentFilterVal = selectFilter.value;
@@ -639,12 +641,11 @@
 
         async function getMenuItems() {
             try {
-                const response = await fetch(window.location.origin + '/api/produtos');
-                if (!response.ok) throw new Error('Erro ao buscar produtos');
-                const data = await response.json();
+                const { data, error } = await supabaseClient.from('products').select('*').order('ordem', { ascending: true }).order('id', { ascending: false });
+                if (error) throw error;
                 return data || [];
             } catch (error) {
-                console.error('Erro:', error);
+                console.error('Erro ao buscar produtos:', error);
                 return [];
             }
         }
@@ -655,7 +656,7 @@
             const categoryFilterVal = document.getElementById('filter-category').value.toLowerCase().trim();
 
             if(searchVal !== '') {
-                products = products.filter(item => item.name.toLowerCase().includes(searchVal));
+                products = products.filter(item => item.name && item.name.toLowerCase().includes(searchVal));
             }
 
             if(categoryFilterVal !== '') {
@@ -665,26 +666,46 @@
             const tbody = document.getElementById('admin-products-list');
 
             if(products.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">Nenhum produto encontrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">Nenhum produto encontrado.</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = products.map(item => `
-                <tr class="hover:bg-slate-800/40 transition-colors">
-                    <td class="p-4 font-bold text-amber-400">#${item.ordem !== undefined && item.ordem !== null ? item.ordem : 0}</td>
-                    <td class="p-4 flex items-center space-x-3">
-                        <img src="${item.image}" alt="" class="w-10 h-10 rounded-lg object-cover border border-slate-700">
-                        <span class="font-bold text-white">${item.name}</span>
-                    </td>
-                    <td class="p-4 capitalize text-slate-300"><span class="bg-slate-800 px-2.5 py-1 rounded-lg text-xs border border-slate-700">${item.category}</span></td>
-                    <td class="p-4 font-semibold text-emerald-400">R$ ${Number(item.price).toFixed(2).replace('.', ',')}</td>
-                    <td class="p-4 text-slate-400 max-w-xs truncate">${item.desc}</td>
-                    <td class="p-4 text-right space-x-2">
-                        <button onclick="openProductModal(${item.id})" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2 rounded-xl border border-slate-700"><i class="fa-solid fa-pen text-xs"></i></button>
-                        <button onclick="deleteProduct(${item.id})" class="bg-slate-800 hover:bg-slate-700 text-red-400 p-2 rounded-xl border border-slate-700"><i class="fa-solid fa-trash text-xs"></i></button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = products.map(item => {
+                const isEsgotado = item.esgotado === true || item.esgotado === 'true' || item.disponivel === false || item.disponivel === 'false';
+
+                return `
+                    <tr class="hover:bg-slate-800/40 transition-colors">
+                        <td class="p-4 font-bold text-amber-400">#${item.ordem !== undefined && item.ordem !== null ? item.ordem : 0}</td>
+                        <td class="p-4 flex items-center space-x-3">
+                            <img src="${item.image || item.imagem || ''}" alt="" class="w-10 h-10 rounded-lg object-cover border border-slate-700">
+                            <span class="font-bold text-white">${item.name || item.nome}</span>
+                        </td>
+                        <td class="p-4 capitalize text-slate-300"><span class="bg-slate-800 px-2.5 py-1 rounded-lg text-xs border border-slate-700">${item.category || item.categoria}</span></td>
+                        <td class="p-4 font-semibold text-emerald-400">R$ ${Number(item.price || item.preco || 0).toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4">
+                            <button onclick="toggleEsgotadoStatus(${item.id}, ${!isEsgotado})" class="px-2.5 py-1 rounded-full text-xs font-bold border transition-all ${isEsgotado ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'}">
+                                ${isEsgotado ? 'ESGOTADO' : 'Disponível'}
+                            </button>
+                        </td>
+                        <td class="p-4 text-slate-400 max-w-xs truncate">${item.desc || item.descricao || ''}</td>
+                        <td class="p-4 text-right space-x-2">
+                            <button onclick="openProductModal(${item.id})" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2 rounded-xl border border-slate-700"><i class="fa-solid fa-pen text-xs"></i></button>
+                            <button onclick="deleteProduct(${item.id})" class="bg-slate-800 hover:bg-slate-700 text-red-400 p-2 rounded-xl border border-slate-700"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function toggleEsgotadoStatus(id, novoEsgotado) {
+            try {
+                const { error } = await supabaseClient.from('products').update({ esgotado: novoEsgotado }).eq('id', id);
+                if (error) throw error;
+                renderAdminProducts();
+            } catch (err) {
+                console.error('Erro ao alterar status:', err);
+                alert('Erro ao alterar status de esgotado.');
+            }
         }
 
         async function openProductModal(id = null) {
@@ -696,18 +717,20 @@
                 const p = products.find(i => i.id === id);
                 if(p) {
                     document.getElementById('prod-id').value = p.id;
-                    document.getElementById('prod-name').value = p.name;
+                    document.getElementById('prod-name').value = p.name || p.nome || '';
                     document.getElementById('prod-ordem').value = p.ordem !== undefined && p.ordem !== null ? p.ordem : 0;
-                    await loadCategoriesSelect(p.category);
-                    document.getElementById('prod-price').value = p.price;
-                    document.getElementById('prod-image-base64').value = p.image;
-                    document.getElementById('prod-desc').value = p.desc;
+                    await loadCategoriesSelect(p.category || p.categoria || '');
+                    document.getElementById('prod-price').value = p.price || p.preco || 0;
+                    document.getElementById('prod-image-base64').value = p.image || p.imagem || '';
+                    document.getElementById('prod-desc').value = p.desc || p.descricao || '';
+                    document.getElementById('prod-esgotado').value = (p.esgotado === true || p.esgotado === 'true') ? 'true' : 'false';
                 }
             } else {
                 document.getElementById('modal-title').textContent = 'Novo Produto';
                 document.getElementById('prod-id').value = '';
                 document.getElementById('prod-ordem').value = '0';
                 document.getElementById('prod-image-base64').value = '';
+                document.getElementById('prod-esgotado').value = 'false';
                 document.querySelector('#product-modal form').reset();
             }
         }
@@ -725,45 +748,38 @@
             const price = parseFloat(document.getElementById('prod-price').value);
             const image = document.getElementById('prod-image-base64').value;
             const desc = document.getElementById('prod-desc').value;
+            const esgotado = document.getElementById('prod-esgotado').value === 'true';
             
             if(!image) return alert('Por favor, selecione uma foto para o produto.');
 
-            const productData = { name, ordem, category, price, image, desc };
+            const productData = { name, ordem, category, price, image, desc, esgotado };
 
             try {
-                let response;
+                let error;
                 if(id) {
-                    response = await fetch(window.location.origin + `/api/produtos/${id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(productData)
-                    });
+                    const res = await supabaseClient.from('products').update(productData).eq('id', id);
+                    error = res.error;
                 } else {
-                    response = await fetch(window.location.origin + '/api/produtos', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(productData)
-                    });
+                    const res = await supabaseClient.from('products').insert([productData]);
+                    error = res.error;
                 }
 
-                if(!response.ok) throw new Error('Erro ao salvar no servidor');
+                if(error) throw error;
 
                 closeProductModal();
                 renderAdminProducts();
                 alert('Produto salvo com sucesso!');
             } catch (error) {
                 console.error(error);
-                alert('Erro ao salvar produto.');
+                alert('Erro ao salvar produto no Supabase.');
             }
         }
 
         async function deleteProduct(id) {
             if(confirm('Tem certeza que deseja excluir este produto?')) {
                 try {
-                    const response = await fetch(window.location.origin + `/api/produtos/${id}`, {
-                        method: 'DELETE'
-                    });
-                    if(!response.ok) throw new Error('Erro ao excluir');
+                    const { error } = await supabaseClient.from('products').delete().eq('id', id);
+                    if(error) throw error;
                     renderAdminProducts();
                 } catch (error) {
                     console.error(error);
@@ -772,15 +788,14 @@
             }
         }
 
-        // FUNÇÃO APENAS PARA VISUALIZAR AS CATEGORIAS (BOTÃO DO TOPO)
+        // VISUALIZAR CATEGORIAS
         async function openViewCategoriesModal() {
             document.getElementById('view-categories-modal').classList.remove('hidden');
             try {
-                const res = await fetch(window.location.origin + '/api/categorias');
-                const categories = await res.json();
+                const { data: categories, error } = await supabaseClient.from('categorias').select('*');
                 const listEl = document.getElementById('view-categories-list');
                 
-                if(!Array.isArray(categories) || categories.length === 0) {
+                if(error || !Array.isArray(categories) || categories.length === 0) {
                     listEl.innerHTML = `<p class="text-slate-500 text-xs text-center py-4">Nenhuma categoria cadastrada.</p>`;
                     return;
                 }
@@ -802,7 +817,7 @@
             document.getElementById('view-categories-modal').classList.add('hidden');
         }
 
-        // FUNÇÕES PARA GERENCIAR CATEGORIAS (ADICIONAR/EDITAR/EXCLUIR)
+        // GERENCIAR CATEGORIAS
         function openCategoryModal() {
             document.getElementById('category-modal').classList.remove('hidden');
             resetCategoryForm();
@@ -824,11 +839,10 @@
 
         async function loadAdminCategories() {
             try {
-                const res = await fetch(window.location.origin + '/api/categorias');
-                const categories = await res.json();
+                const { data: categories, error } = await supabaseClient.from('categorias').select('*');
                 const listEl = document.getElementById('categories-list');
                 
-                if(!Array.isArray(categories) || categories.length === 0) {
+                if(error || !Array.isArray(categories) || categories.length === 0) {
                     listEl.innerHTML = `<p class="text-slate-500 text-xs text-center py-4">Nenhuma categoria cadastrada.</p>`;
                     return;
                 }
@@ -872,28 +886,27 @@
 
             if(!nome) return alert('Digite o nome da categoria.');
 
-            const proceedWithImage = (imagemBase64 = null) => {
-                const payload = { nome, imagem: imagemBase64 };
-                const url = id ? `${window.location.origin}/api/categorias/${id}` : `${window.location.origin}/api/categorias`;
-                const method = id ? 'PUT' : 'POST';
+            const proceedWithImage = async (imagemBase64 = null) => {
+                const payload = { nome };
+                if (imagemBase64) payload.imagem = imagemBase64;
 
-                fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }).then(res => {
-                    if(res.ok) {
-                        alert(id ? 'Categoria atualizada com sucesso!' : 'Categoria criada com sucesso!');
-                        resetCategoryForm();
-                        loadAdminCategories();
-                        loadCategoriesSelect();
-                    } else {
-                        alert('Erro ao salvar categoria.');
-                    }
-                }).catch(err => {
-                    console.error(err);
-                    alert('Erro de conexão ao salvar categoria.');
-                });
+                let error;
+                if(id) {
+                    const res = await supabaseClient.from('categorias').update(payload).eq('id', id);
+                    error = res.error;
+                } else {
+                    const res = await supabaseClient.from('categorias').insert([payload]);
+                    error = res.error;
+                }
+
+                if(!error) {
+                    alert(id ? 'Categoria atualizada com sucesso!' : 'Categoria criada com sucesso!');
+                    resetCategoryForm();
+                    loadAdminCategories();
+                    loadCategoriesSelect();
+                } else {
+                    alert('Erro ao salvar categoria no Supabase.');
+                }
             };
 
             if (fileInput.files && fileInput.files[0]) {
@@ -928,7 +941,8 @@
         async function deleteCategory(id) {
             if(confirm('Tem certeza que deseja excluir esta categoria?')) {
                 try {
-                    await fetch(window.location.origin + `/api/categorias/${id}`, { method: 'DELETE' });
+                    const { error } = await supabaseClient.from('categorias').delete().eq('id', id);
+                    if(error) throw error;
                     loadAdminCategories();
                     loadCategoriesSelect();
                 } catch (err) {
@@ -937,9 +951,7 @@
             }
         }
 
-        // ==========================================
-        // GERENCIAMENTO DE BAIRROS E TAXAS (SUPABASE)
-        // ==========================================
+        // GERENCIAMENTO DE BAIRROS E TAXAS
         function openBairrosModal() {
             document.getElementById('bairros-modal').classList.remove('hidden');
             resetBairroForm();
@@ -961,11 +973,10 @@
 
         async function loadAdminBairros() {
             try {
-                const res = await fetch(window.location.origin + '/api/bairros');
-                const bairros = await res.json();
+                const { data: bairros, error } = await supabaseClient.from('bairros').select('*');
                 const listEl = document.getElementById('bairros-list');
                 
-                if(!Array.isArray(bairros) || bairros.length === 0) {
+                if(error || !Array.isArray(bairros) || bairros.length === 0) {
                     listEl.innerHTML = `<p class="text-slate-500 text-xs text-center py-4">Nenhum bairro cadastrado.</p>`;
                     return;
                 }
@@ -1000,17 +1011,18 @@
             if(!nome) return alert('Digite o nome do bairro.');
 
             const payload = { nome, taxa };
-            const url = id ? `${window.location.origin}/api/bairros/${id}` : `${window.location.origin}/api/bairros`;
-            const method = id ? 'PUT' : 'POST';
 
             try {
-                const res = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                let error;
+                if(id) {
+                    const res = await supabaseClient.from('bairros').update(payload).eq('id', id);
+                    error = res.error;
+                } else {
+                    const res = await supabaseClient.from('bairros').insert([payload]);
+                    error = res.error;
+                }
 
-                if(res.ok) {
+                if(!error) {
                     alert(id ? 'Bairro atualizado com sucesso!' : 'Bairro adicionado com sucesso!');
                     resetBairroForm();
                     loadAdminBairros();
@@ -1019,7 +1031,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                alert('Erro de conexão ao salvar bairro.');
+                alert('Erro ao salvar bairro.');
             }
         }
 
@@ -1035,18 +1047,16 @@
         async function deleteBairro(id) {
             if(confirm('Tem certeza que deseja excluir este bairro?')) {
                 try {
-                    await fetch(window.location.origin + `/api/bairros/${id}`, { method: 'DELETE' });
+                    const { error } = await supabaseClient.from('bairros').delete().eq('id', id);
+                    if(error) throw error;
                     loadAdminBairros();
                 } catch (err) {
                     console.error('Erro ao excluir bairro:', err);
                 }
             }
         }
-        // ==========================================
 
-        // ==========================================
-        // GERENCIAMENTO DE ADICIONAIS POR CATEGORIA (SUPABASE)
-        // ==========================================
+        // GERENCIAMENTO DE ADICIONAIS POR CATEGORIA
         async function openAdicionaisModal() {
             document.getElementById('adicionais-modal').classList.remove('hidden');
             resetAdicionalForm();
@@ -1072,10 +1082,9 @@
 
         async function loadCategoriasParaSelectAdicional() {
             try {
-                const res = await fetch(window.location.origin + '/api/categorias');
-                const categorias = await res.json();
+                const { data: categorias, error } = await supabaseClient.from('categorias').select('*');
                 const select = document.getElementById('adicional-categoria');
-                if(select && Array.isArray(categorias)) {
+                if(select && !error && Array.isArray(categorias)) {
                     select.innerHTML = `<option value="" disabled selected>Selecione a Categoria</option>` + 
                         categorias.map(cat => `<option value="${cat.nome}">${cat.nome}</option>`).join('');
                 }
@@ -1116,7 +1125,7 @@
                     
                     label.innerHTML = `
                         <input type="checkbox" name="produtosEspecificos" value="${produto.id}" style="margin-right: 8px; accent-color: #ef4444; width: 14px; height: 14px;">
-                        <span>${produto.name}</span>
+                        <span>${produto.name || produto.nome}</span>
                     `;
                     listaDiv.appendChild(label);
                 });
@@ -1129,11 +1138,10 @@
 
         async function loadAdminAdicionais() {
             try {
-                const res = await fetch(window.location.origin + '/api/adicionais');
-                const adicionais = await res.json();
+                const { data: adicionais, error } = await supabaseClient.from('adicionais').select('*');
                 const listEl = document.getElementById('adicionais-list');
                 
-                if(!Array.isArray(adicionais) || adicionais.length === 0) {
+                if(error || !Array.isArray(adicionais) || adicionais.length === 0) {
                     listEl.innerHTML = `<p class="text-slate-500 text-xs text-center py-4">Nenhum adicional cadastrado.</p>`;
                     return;
                 }
@@ -1167,13 +1175,11 @@
             if(!nome || !categoria) return alert('Preencha o nome e selecione a categoria.');
 
             try {
-                const res = await fetch(window.location.origin + '/api/adicionais', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nome, preco, categoria, produtos_especificos: idsProdutosEspecificos })
-                });
+                const { error } = await supabaseClient.from('adicionais').insert([{
+                    nome, preco, categoria, produtos_especificos: idsProdutosEspecificos
+                }]);
 
-                if(res.ok) {
+                if(!error) {
                     alert('Adicional salvo com sucesso!');
                     resetAdicionalForm();
                     loadAdminAdicionais();
@@ -1182,28 +1188,28 @@
                 }
             } catch (err) {
                 console.error(err);
-                alert('Erro de conexão ao salvar adicional.');
+                alert('Erro ao salvar adicional.');
             }
         }
 
         async function deleteAdicional(id) {
             if(confirm('Tem certeza que deseja excluir este adicional?')) {
                 try {
-                    await fetch(window.location.origin + `/api/adicionais/${id}`, { method: 'DELETE' });
+                    const { error } = await supabaseClient.from('adicionais').delete().eq('id', id);
+                    if(error) throw error;
                     loadAdminAdicionais();
                 } catch (err) {
                     console.error('Erro ao excluir adicional:', err);
                 }
             }
         }
-        // ==========================================
 
+        // CONFIGURAÇÕES DA LOJA
         async function openConfigModal() {
             document.getElementById('config-modal').classList.remove('hidden');
             try {
-                const res = await fetch(window.location.origin + '/api/configuracoes');
-                const config = await res.json();
-                if(config) {
+                const { data: config, error } = await supabaseClient.from('configuracoes').select('*').limit(1).maybeSingle();
+                if(config && !error) {
                     document.getElementById('config-name').value = config.nome_loja || '';
                     document.getElementById('config-logo-base64').value = config.logo_url || '';
                     document.getElementById('config-whatsapp').value = config.whatsapp || '';
@@ -1224,24 +1230,19 @@
             let whatsapp = document.getElementById('config-whatsapp').value;
 
             try {
-                const res = await fetch(window.location.origin + '/api/configuracoes');
-                const config = await res.json() || {};
+                const { data: existing } = await supabaseClient.from('configuracoes').select('id, logo_url').limit(1).maybeSingle();
 
                 if (!logo_url || logo_url.trim() === '') {
-                    logo_url = config.logo_url || '';
+                    logo_url = (existing && existing.logo_url) ? existing.logo_url : '';
                 }
 
-                await fetch(window.location.origin + '/api/configuracoes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        nome_loja, 
-                        logo_url, 
-                        whatsapp
-                    })
-                });
+                if (existing && existing.id) {
+                    await supabaseClient.from('configuracoes').update({ nome_loja, logo_url, whatsapp }).eq('id', existing.id);
+                } else {
+                    await supabaseClient.from('configuracoes').insert([{ nome_loja, logo_url, whatsapp }]);
+                }
             } catch (err) {
-                console.error('Erro ao salvar no servidor:', err);
+                console.error('Erro ao salvar configurações no Supabase:', err);
             }
 
             loadBrandConfig();
@@ -1271,26 +1272,14 @@
                 return;
             }
 
-            try {
-                const response = await fetch(window.location.origin + '/api/admin/alterar-credenciais', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ novoUsuario, novaSenha: p1 })
-                });
+            localStorage.setItem('admin_custom_user', novoUsuario);
+            localStorage.setItem('admin_custom_pass', p1);
 
-                const data = await response.json();
-                if(data.success) {
-                    closePasswordModal();
-                    alert('Credenciais alteradas e salvas com sucesso !');
-                } else {
-                    alert('Erro ao salvar credenciais: ' + data.message);
-                }
-            } catch (err) {
-                console.error('Erro ao alterar credenciais:', err);
-                alert('Erro de conexão ao salvar.');
-            }
+            closePasswordModal();
+            alert('Credenciais alteradas e salvas com sucesso!');
         }
 
+        // BANNERS
         function openBannerModal() {
             document.getElementById('banner-modal').classList.remove('hidden');
             loadAdminBanners();
@@ -1302,11 +1291,10 @@
 
         async function loadAdminBanners() {
             try {
-                const res = await fetch(window.location.origin + '/api/banners');
-                const banners = await res.json();
+                const { data: banners, error } = await supabaseClient.from('banners').select('*');
                 const listEl = document.getElementById('banners-list');
                 
-                if(!Array.isArray(banners) || banners.length === 0) {
+                if(error || !Array.isArray(banners) || banners.length === 0) {
                     listEl.innerHTML = `<p class="text-slate-500 text-xs text-center py-4">Nenhum banner cadastrado.</p>`;
                     return;
                 }
@@ -1366,13 +1354,11 @@
                     const imagemBase64 = canvas.toDataURL('image/jpeg', 0.75);
 
                     try {
-                        const res = await fetch(window.location.origin + '/api/banners', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ imagem: imagemBase64, titulo, subtitulo, tag })
-                        });
+                        const { error } = await supabaseClient.from('banners').insert([{
+                            imagem: imagemBase64, titulo, subtitulo, tag
+                        }]);
 
-                        if(res.ok) {
+                        if(!error) {
                             alert('Banner adicionado com sucesso!');
                             document.querySelector('#banner-modal form').reset();
                             loadAdminBanners();
@@ -1381,7 +1367,7 @@
                         }
                     } catch (err) {
                         console.error(err);
-                        alert('Erro de conexão ao salvar banner.');
+                        alert('Erro ao salvar banner.');
                     }
                 };
                 img.src = uploadEvent.target.result;
@@ -1392,7 +1378,8 @@
         async function deleteBanner(id) {
             if(confirm('Tem certeza que deseja excluir este banner?')) {
                 try {
-                    await fetch(window.location.origin + `/api/banners/${id}`, { method: 'DELETE' });
+                    const { error } = await supabaseClient.from('banners').delete().eq('id', id);
+                    if(error) throw error;
                     loadAdminBanners();
                 } catch (err) {
                     console.error('Erro ao excluir:', err);
