@@ -30,7 +30,7 @@
 <body class="bg-darkBg text-slate-100 min-h-screen flex flex-col justify-between">
 
     <!-- BARRA SUPERIOR LARANJA PARA APLICATIVO -->
-    <div onclick="openAppModal()" class="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-extrabold text-xs py-2 px-4 text-center cursor-pointer hover:opacity-95 transition-all shadow-md flex items-center justify-center space-x-2 border-b border-amber-400/30">
+    <div id="top-app-banner" onclick="openAppModal()" class="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-extrabold text-xs py-2 px-4 text-center cursor-pointer hover:opacity-95 transition-all shadow-md flex items-center justify-center space-x-2 border-b border-amber-400/30">
         <i class="fa-solid fa-mobile-screen-button text-sm animate-bounce"></i>
         <span>Baixe o app oficial aqui para pedidos mais rápidos!</span>
     </div>
@@ -154,8 +154,7 @@
             <p class="text-slate-400 text-xs mb-6">Baixe o aplicativo oficial do <span id="app-modal-store-name">Gonçalves Lanches</span> no seu celular para pedir com muito mais facilidade.</p>
 
             <div class="space-y-3">
-                <!-- Se o ficheiro APK estiver na sua pasta public, coloque o caminho dele em href ex: "app.apk" -->
-                <a href="goncalves.apk" download class="block w-full bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-extrabold py-3 rounded-2xl shadow-lg text-sm transition-all flex items-center justify-center space-x-2">
+                <a href="goncalves.apk" download onclick="registrarDownloadApp()" class="block w-full bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-extrabold py-3 rounded-2xl shadow-lg text-sm transition-all flex items-center justify-center space-x-2">
                     <i class="fa-solid fa-download"></i>
                     <span>Baixar Aplicativo APK</span>
                 </a>
@@ -275,6 +274,8 @@
         }
         
         window.addEventListener('DOMContentLoaded', async () => {
+            verificarExibicaoBannerApp();
+
             try {
                 const { data: config, error } = await supabaseClient.from('configuracoes').select('*').limit(1).maybeSingle();
                 if(config && !error) {
@@ -321,6 +322,25 @@
             carregarBairrosNoCarrinho();
             updateCartUI();
         });
+
+        function verificarExibicaoBannerApp() {
+            const banner = document.getElementById('top-app-banner');
+            if (!banner) return;
+
+            const isCapacitorApp = window.Capacitor !== undefined || window.location.href.includes('capacitor://') || navigator.userAgent.includes('wv');
+            const jaBaixou = localStorage.getItem('app_downloaded') === 'true';
+
+            if (isCapacitorApp || jaBaixou) {
+                banner.style.display = 'none';
+            }
+        }
+
+        function registrarDownloadApp() {
+            localStorage.setItem('app_downloaded', 'true');
+            const banner = document.getElementById('top-app-banner');
+            if (banner) banner.style.display = 'none';
+            closeAppModal();
+        }
 
         window.openAppModal = function() {
             document.getElementById('app-download-modal').classList.remove('hidden');
