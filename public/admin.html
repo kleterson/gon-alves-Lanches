@@ -492,7 +492,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT ADAPTADO PARA SUPABASE ESTÁTICO -->
+    <!-- SCRIPT 100% SUPABASE ESTÁTICO -->
     <script>
         const SUPABASE_URL = 'https://vfxaiknoawzoenodwqjf.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_aDGXBwvkdk5t-9KxgJYQ9Q_VnyMst8a';
@@ -590,14 +590,27 @@
             const usuario = document.getElementById('user').value.trim();
             const senha = document.getElementById('pass').value.trim();
 
-            const storedUser = localStorage.getItem('admin_custom_user') || 'admin';
-            const storedPass = localStorage.getItem('admin_custom_pass') || '123456';
+            try {
+                const { data, error } = await supabaseClient
+                    .from('usuarios_admin')
+                    .select('*')
+                    .eq('usuario', usuario)
+                    .eq('senha', senha)
+                    .maybeSingle();
 
-            if((usuario === 'admin' && senha === '123456') || (usuario === storedUser && senha === storedPass)) {
-                localStorage.setItem('admin_logged', 'true');
-                showAdminPanel();
-            } else {
-                alert('Usuário ou senha incorretos!');
+                if ((data && !error) || (usuario === 'admin' && senha === '123456')) {
+                    localStorage.setItem('admin_logged', 'true');
+                    showAdminPanel();
+                } else {
+                    alert('Usuário ou senha incorretos!');
+                }
+            } catch (err) {
+                if (usuario === 'admin' && senha === '123456') {
+                    localStorage.setItem('admin_logged', 'true');
+                    showAdminPanel();
+                } else {
+                    alert('Usuário ou senha incorretos!');
+                }
             }
         }
 
@@ -788,7 +801,6 @@
             }
         }
 
-        // VISUALIZAR CATEGORIAS
         async function openViewCategoriesModal() {
             document.getElementById('view-categories-modal').classList.remove('hidden');
             try {
@@ -817,7 +829,6 @@
             document.getElementById('view-categories-modal').classList.add('hidden');
         }
 
-        // GERENCIAR CATEGORIAS
         function openCategoryModal() {
             document.getElementById('category-modal').classList.remove('hidden');
             resetCategoryForm();
@@ -951,7 +962,6 @@
             }
         }
 
-        // GERENCIAMENTO DE BAIRROS E TAXAS
         function openBairrosModal() {
             document.getElementById('bairros-modal').classList.remove('hidden');
             resetBairroForm();
@@ -1056,7 +1066,6 @@
             }
         }
 
-        // GERENCIAMENTO DE ADICIONAIS POR CATEGORIA
         async function openAdicionaisModal() {
             document.getElementById('adicionais-modal').classList.remove('hidden');
             resetAdicionalForm();
@@ -1170,13 +1179,16 @@
             const categoria = categoriaSelect.value.trim();
 
             const checkboxesSelecionados = document.querySelectorAll('input[name="produtosEspecificos"]:checked');
-            const idsProdutosEspecificos = Array.from(checkboxesSelecionados).map(cb => cb.value);
+            const idsProdutosEspecificos = Array.from(checkboxesSelecionados).map(cb => String(cb.value));
 
             if(!nome || !categoria) return alert('Preencha o nome e selecione a categoria.');
 
             try {
                 const { error } = await supabaseClient.from('adicionais').insert([{
-                    nome, preco, categoria, produtos_especificos: idsProdutosEspecificos
+                    nome, 
+                    preco, 
+                    categoria, 
+                    produtos_especificos: idsProdutosEspecificos
                 }]);
 
                 if(!error) {
@@ -1184,11 +1196,12 @@
                     resetAdicionalForm();
                     loadAdminAdicionais();
                 } else {
-                    alert('Erro ao salvar adicional.');
+                    console.error(error);
+                    alert('Erro ao salvar adicional: ' + error.message);
                 }
             } catch (err) {
                 console.error(err);
-                alert('Erro ao salvar adicional.');
+                alert('Erro de conexão ao salvar adicional.');
             }
         }
 
@@ -1204,7 +1217,6 @@
             }
         }
 
-        // CONFIGURAÇÕES DA LOJA
         async function openConfigModal() {
             document.getElementById('config-modal').classList.remove('hidden');
             try {
@@ -1272,14 +1284,30 @@
                 return;
             }
 
-            localStorage.setItem('admin_custom_user', novoUsuario);
-            localStorage.setItem('admin_custom_pass', p1);
+            try {
+                const { data: existing } = await supabaseClient.from('usuarios_admin').select('id').limit(1).maybeSingle();
 
-            closePasswordModal();
-            alert('Credenciais alteradas e salvas com sucesso!');
+                let error;
+                if (existing && existing.id) {
+                    const res = await supabaseClient.from('usuarios_admin').update({ usuario: novoUsuario, senha: p1 }).eq('id', existing.id);
+                    error = res.error;
+                } else {
+                    const res = await supabaseClient.from('usuarios_admin').insert([{ usuario: novoUsuario, senha: p1 }]);
+                    error = res.error;
+                }
+
+                if (!error) {
+                    closePasswordModal();
+                    alert('Credenciais alteradas e salvas com sucesso no Supabase!');
+                } else {
+                    alert('Erro ao salvar credenciais: ' + error.message);
+                }
+            } catch (err) {
+                console.error('Erro ao alterar credenciais:', err);
+                alert('Erro de conexão ao salvar.');
+            }
         }
 
-        // BANNERS
         function openBannerModal() {
             document.getElementById('banner-modal').classList.remove('hidden');
             loadAdminBanners();
