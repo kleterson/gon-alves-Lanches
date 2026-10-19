@@ -327,18 +327,18 @@
             const banner = document.getElementById('top-app-banner');
             if (!banner) return;
 
+            // Detecta estritamente se está rodando dentro do Aplicativo Nativo
             const isCapacitorApp = window.Capacitor !== undefined || window.location.href.includes('capacitor://') || navigator.userAgent.includes('wv');
-            const jaBaixou = localStorage.getItem('app_downloaded') === 'true';
 
-            if (isCapacitorApp || jaBaixou) {
+            // Se estiver no App, esconde. Se estiver no site do navegador, mantém visível!
+            if (isCapacitorApp) {
                 banner.style.display = 'none';
+            } else {
+                banner.style.display = 'flex';
             }
         }
 
         function registrarDownloadApp() {
-            localStorage.setItem('app_downloaded', 'true');
-            const banner = document.getElementById('top-app-banner');
-            if (banner) banner.style.display = 'none';
             closeAppModal();
         }
 
