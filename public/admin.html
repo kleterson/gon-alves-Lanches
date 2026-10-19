@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin | Configurações</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { primary: '#ef4444', secondary: '#f59e0b', darkBg: '#0f172a', cardBg: '#1e293b' }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Inter', sans-serif; } </style>
+</head>
+<body class="bg-darkBg text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center px-4">
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl w-full max-w-md shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="bg-gradient-to-tr from-red-600 to-amber-500 p-3 rounded-2xl w-14 h-14 mx-auto flex items-center justify-center mb-3">
+                    <i class="fa-solid fa-lock text-2xl text-white"></i>
+                </div>
+                <h2 class="text-2xl font-black text-white">Painel Administrativo</h2>
+                <p class="text-slate-400 text-sm mt-1">Entre com suas credenciais para gerenciar o cardápio</p>
+            </div>
+            <form onsubmit="handleLogin(event); return false;" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Usuário</label>
+                    <input type="text" id="user" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-500" placeholder="admin">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Senha</label>
+                    <input type="password" id="pass" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-500" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-red-600 to-amber-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all text-center">
+                    Entrar no Painel
+                </button>
+            </form>
+            <div class="mt-6 text-center">
+                <a href="index.html" class="text-xs text-slate-500 hover:text-slate-300">← Voltar para o Cardápio</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA DO PAINEL ADMIN -->
+    <div id="admin-panel" class="hidden flex-grow flex flex-col justify-between">
+        <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div id="header-logo-container" class="w-11 h-11 rounded-xl overflow-hidden flex items-center justify-center bg-gradient-to-tr from-red-600 to-amber-500 shadow-md">
+                        <i id="header-logo-icon" class="fa-solid fa-utensils text-xl text-white"></i>
+                        <img id="header-logo-img" src="" alt="" class="w-full h-full object-cover hidden">
+                    </div>
+                    <div>
+                        <span id="header-brand-name" class="text-xl font-extrabold text-white">Burger & Cia</span>
+                        <span class="block text-xs text-red-400">Painel de Controle</span>
+                    </div>
+                </div>
+
+                <!-- Menu Desktop -->
+                <div class="hidden md:flex items-center space-x-3">
+                    <a href="index.html" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-700">
+                        <i class="fa-solid fa-eye mr-2"></i> Ver Cardápio
+                    </a>
+                    <button onclick="openBannerModal()" class="bg-slate-800 hover:bg-slate-700 text-purple-400 px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-700">
+                        <i class="fa-solid fa-images mr-2"></i> Banners
+                    </button>
+                    <button onclick="openViewCategoriesModal()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-700">
+                        <i class="fa-solid fa-folder-open mr-2"></i> Categorias
+                    </button>
+                    <button onclick="openBairrosModal()" class="bg-slate-800 hover:bg-slate-700 text-amber-500 px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-700">
+                        <i class="fa-solid fa-map-location-dot mr-2"></i> Bairros
+                    </button>
+                    <button onclick="openAdicionaisModal()" class="bg-slate-800 hover:bg-slate-700 text-rose-400 px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-700">
+                        <i class="fa-solid fa-plus-circle mr-2"></i> Adicionais
+                    </button>
+                    <button onclick="openConfigModal()" class="bg-slate-800 hover:bg-slate-700 text-cyan-400 px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-700">
+                        <i class="fa-solid fa-gear mr-2"></i> Configurações
+                    </button>
+                    <button onclick="openChangePasswordModal()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-700">
+                        <i class="fa-solid fa-key mr-2"></i> Alterar Credenciais
+                    </button>
+                    <button onclick="logout()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2.5 rounded-xl text-sm font-semibold border border-red-500/20">
+                        <i class="fa-solid fa-right-from-bracket mr-2"></i> Sair
+                    </button>
+                </div>
+
+                <!-- Botão Menu Mobile -->
+                <div class="md:hidden">
+                    <button onclick="toggleMobileMenu()" class="bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-xl text-sm font-semibold border border-slate-700 flex items-center justify-center">
+                        <i class="fa-solid fa-bars text-red-500 text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Menu Lateral Esquerdo (Sidebar Mobile Drawer) -->
+        <div id="mobile-sidebar" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden transition-all duration-300">
+            <div id="mobile-sidebar-content" class="absolute top-0 left-0 bottom-0 w-72 bg-slate-900 border-r border-slate-800 p-6 flex flex-col justify-between shadow-2xl transform -translate-x-full transition-transform duration-300">
+                <div>
+                    <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center bg-gradient-to-tr from-red-600 to-amber-500 shadow-md">
+                                <i class="fa-solid fa-utensils text-white text-sm"></i>
+                            </div>
+                            <span class="text-base font-extrabold text-white">Menu Admin</span>
+                        </div>
+                        <button onclick="toggleMobileMenu()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+                    </div>
+
+                    <div class="space-y-2">
+                        <a href="index.html" target="_blank" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm text-slate-300 hover:bg-slate-800 transition-colors">
+                            <i class="fa-solid fa-eye text-slate-400 w-5"></i>
+                            <span>Ver Cardápio</span>
+                        </a>
+                        <button onclick="openBannerModal(); toggleMobileMenu();" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm text-purple-400 hover:bg-slate-800 transition-colors text-left">
+                            <i class="fa-solid fa-images w-5"></i>
+                            <span>Banners</span>
+                        </button>
+                        <button onclick="openViewCategoriesModal(); toggleMobileMenu();" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm text-emerald-400 hover:bg-slate-800 transition-colors text-left">
+                            <i class="fa-solid fa-folder-open w-5"></i>
+                            <span>Categorias</span>
+                        </button>
+                        <button onclick="openBairrosModal(); toggleMobileMenu();" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm text-amber-500 hover:bg-slate-800 transition-colors text-left">
+                            <i class="fa-solid fa-map-location-dot w-5"></i>
+                            <span>Bairros</span>
+                        </button>
+                        <button onclick="openAdicionaisModal(); toggleMobileMenu();" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm text-rose-400 hover:bg-slate-800 transition-colors text-left">
+                            <i class="fa-solid fa-plus-circle w-5"></i>
+                            <span>Adicionais</span>
+                        </button>
+                        <button onclick="openConfigModal(); toggleMobileMenu();" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm text-cyan-400 hover:bg-slate-800 transition-colors text-left">
+                            <i class="fa-solid fa-gear w-5"></i>
+                            <span>Configurações</span>
+                        </button>
+                        <button onclick="openChangePasswordModal(); toggleMobileMenu();" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm text-amber-400 hover:bg-slate-800 transition-colors text-left">
+                            <i class="fa-solid fa-key w-5"></i>
+                            <span>Alterar Credenciais</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-800">
+                    <button onclick="logout()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors text-left">
+                        <i class="fa-solid fa-right-from-bracket w-5"></i>
+                        <span>Sair do Painel</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <main class="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 pb-6 border-b border-slate-800">
+                <div>
+                    <h1 class="text-3xl font-black text-white">Gerenciar Produtos</h1>
+                    <p class="text-slate-400 text-sm mt-1">Adicione, edite ou remova os itens exibidos no cardápio digital.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button onclick="openCategoryModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl shadow-lg flex items-center space-x-2 text-sm">
+                        <i class="fa-solid fa-folder-plus"></i>
+                        <span>Gerenciar Categorias</span>
+                    </button>
+                    <button onclick="openProductModal()" class="bg-gradient-to-r from-red-600 to-amber-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg flex items-center space-x-2 text-sm">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Novo Produto</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filtros de Pesquisa e Categoria -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="md:col-span-2 relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-500">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" id="search-input" oninput="renderAdminProducts()" placeholder="Pesquisar produto pelo nome..." class="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500 shadow-lg">
+                </div>
+                <div>
+                    <select id="filter-category" onchange="renderAdminProducts()" class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-red-500 shadow-lg capitalize">
+                        <option value="">Todas as Categorias</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-950/60 border-b border-slate-800 text-xs uppercase text-slate-400 font-semibold tracking-wider">
+                                <th class="p-4">Ordem</th>
+                                <th class="p-4">Produto</th>
+                                <th class="p-4">Categoria</th>
+                                <th class="p-4">Preço</th>
+                                <th class="p-4">Descrição</th>
+                                <th class="p-4 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-products-list" class="divide-y divide-slate-800 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL DE PRODUTO -->
+    <div id="product-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-4">
+                <h3 id="modal-title" class="text-xl font-bold text-white">Novo Produto</h3>
+                <button onclick="closeProductModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </div>
+            <form onsubmit="saveProduct(event)" class="space-y-4">
+                <input type="hidden" id="prod-id">
+                <input type="hidden" id="prod-image-base64">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Nome do Produto</label>
+                    <input type="text" id="prod-name" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="col-span-1">
+                        <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Ordem / Posição</label>
+                        <input type="number" id="prod-ordem" value="0" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500" placeholder="Ex: 1">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Categoria</label>
+                        <select id="prod-category" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500 capitalize">
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Preço (R$)</label>
+                    <input type="number" step="0.01" id="prod-price" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Foto do Produto (Arquivo)</label>
+                    <input type="file" id="prod-file" accept="image/*" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-red-600 file:text-white hover:file:bg-red-500 cursor-pointer" onchange="compressImage(this, 'prod-image-base64', 600)">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Descrição</label>
+                    <textarea id="prod-desc" rows="3" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeProductModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg text-sm">Salvar Produto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE VISUALIZAR APENAS AS CATEGORIAS -->
+    <div id="view-categories-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-4">
+                <h3 class="text-xl font-bold text-white">Categorias Cadastradas no Sistema</h3>
+                <button onclick="closeViewCategoriesModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </div>
+            <div id="view-categories-list" class="space-y-3 max-h-96 overflow-y-auto"></div>
+            <div class="mt-6 text-right">
+                <button onclick="closeViewCategoriesModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2.5 rounded-xl text-sm font-semibold">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE GERENCIAR CATEGORIAS (ADICIONAR/EDITAR/EXCLUIR) -->
+    <div id="category-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-4">
+                <h3 id="category-modal-title" class="text-xl font-bold text-white">Gerenciar Categorias</h3>
+                <button onclick="closeCategoryModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </div>
+            
+            <form onsubmit="saveCategory(event)" class="space-y-4 mb-6 bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                <input type="hidden" id="cat-id">
+                <h4 id="category-form-heading" class="text-sm font-bold text-emerald-400 uppercase tracking-wider">Adicionar Nova Categoria</h4>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Nome da Categoria</label>
+                    <input type="text" id="cat-name" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white" placeholder="Ex: Lanches, Porções">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Foto / Banner da Categoria (Arquivo)</label>
+                    <input type="file" id="cat-file" accept="image/*" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-500 cursor-pointer">
+                </div>
+                <div class="flex space-x-2">
+                    <button type="submit" id="cat-submit-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl shadow-lg text-sm transition-all">
+                        Salvar Categoria
+                    </button>
+                    <button type="button" id="cat-cancel-edit" onclick="resetCategoryForm()" class="hidden bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold px-4 py-2.5 rounded-xl text-sm">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+
+            <h4 class="text-sm font-bold text-slate-300 mb-3 uppercase tracking-wider">Categorias Cadastradas</h4>
+            <div id="categories-list" class="space-y-3 max-h-60 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- MODAL DE GERENCIAR BAIRROS E TAXAS DE ENTREGA (SUPABASE) -->
+    <div id="bairros-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-4">
+                <h3 id="bairro-modal-title" class="text-xl font-bold text-white">Gerenciar Bairros e Taxas</h3>
+                <button onclick="closeBairrosModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </div>
+            
+            <form onsubmit="saveBairro(event)" class="space-y-4 mb-6 bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                <input type="hidden" id="bairro-id" value="">
+                <h4 id="bairro-form-heading" class="text-sm font-bold text-amber-500 uppercase tracking-wider">Adicionar Novo Bairro</h4>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Nome do Bairro</label>
+                    <input type="text" id="bairro-nome" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white" placeholder="Ex: Centro">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Taxa de Entrega (R$)</label>
+                    <input type="number" step="0.01" id="bairro-taxa" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white" placeholder="Ex: 5.00">
+                </div>
+                <div class="flex space-x-2">
+                    <button type="submit" id="bairro-submit-btn" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl shadow-lg text-sm transition-all">
+                        Salvar Bairro
+                    </button>
+                    <button type="button" id="bairro-cancel-edit" onclick="resetBairroForm()" class="hidden bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold px-4 py-2.5 rounded-xl text-sm">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+
+            <h4 class="text-sm font-bold text-slate-300 mb-3 uppercase tracking-wider">Bairros Cadastrados</h4>
+            <div id="bairros-list" class="space-y-3 max-h-60 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- MODAL DE GERENCIAR ADICIONAIS POR CATEGORIA (SUPABASE) -->
+    <div id="adicionais-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-4">
+                <h3 id="adicional-modal-title" class="text-xl font-bold text-white">Gerenciar Adicionais / Opcionais</h3>
+                <button onclick="closeAdicionaisModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </div>
+            
+            <form onsubmit="saveAdicional(event)" class="space-y-4 mb-6 bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                <input type="hidden" id="adicional-id" value="">
+                <h4 id="adicional-form-heading" class="text-sm font-bold text-rose-400 uppercase tracking-wider">Adicionar Novo Adicional</h4>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Nome do Adicional</label>
+                    <input type="text" id="adicional-nome" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white" placeholder="Ex: Bacon Extra, Cheddar">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Preço Adicional (R$)</label>
+                    <input type="number" step="0.01" id="adicional-preco" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white" placeholder="Ex: 4.00">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Categoria Alvo</label>
+                    <select id="adicional-categoria" required onchange="carregarItensDaCategoria(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white capitalize">
+                        <!-- Preenchido dinamicamente via JS -->
+                    </select>
+                </div>
+                
+                <!-- NOVO: Container para escolher itens específicos da categoria selecionada -->
+                <div class="form-group" id="containerItensEspecificos" style="display: none; margin-top: 10px;">
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Vincular a Itens Específicos (Opcional)</label>
+                    <div style="max-height: 150px; overflow-y: auto; border: 1px solid #334155; padding: 8px; border-radius: 8px; background-color: #0f172a;" id="listaCheckboxesItens">
+                        <!-- Os produtos da categoria selecionada aparecerão aqui como checkboxes -->
+                    </div>
+                    <small style="color: #94a3b8; font-size: 11px; display: block; margin-top: 4px;">Se deixar nenhum marcado, o adicional valerá para toda a categoria.</small>
+                </div>
+
+                <div class="flex space-x-2 pt-2">
+                    <button type="submit" id="adicional-submit-btn" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded-xl shadow-lg text-sm transition-all">
+                        Salvar Adicional
+                    </button>
+                    <button type="button" id="adicional-cancel-edit" onclick="resetAdicionalForm()" class="hidden bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold px-4 py-2.5 rounded-xl text-sm">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+
+            <h4 class="text-sm font-bold text-slate-300 mb-3 uppercase tracking-wider">Adicionais Cadastrados</h4>
+            <div id="adicionais-list" class="space-y-3 max-h-60 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIGURAÇÕES -->
+    <div id="config-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-4">
+                <h3 class="text-xl font-bold text-white">Configurações da Marca</h3>
+                <button onclick="closeConfigModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </div>
+            <form onsubmit="saveConfig(event)" class="space-y-4">
+                <input type="hidden" id="config-logo-base64">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Nome da Loja / Empresa</label>
+                    <input type="text" id="config-name" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500" placeholder="Ex: Burger & Cia">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Foto do Logo da Loja (Arquivo)</label>
+                    <input type="file" id="config-logo-file" accept="image/*" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-cyan-600 file:text-white hover:file:bg-cyan-500 cursor-pointer" onchange="compressImage(this, 'config-logo-base64', 300)">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Número do WhatsApp</label>
+                    <input type="text" id="config-whatsapp" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500" placeholder="Ex: 5599999999999">
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeConfigModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg text-sm">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE ALTERAR CREDENCIAIS (USUÁRIO E SENHA) -->
+    <div id="password-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-4">
+                <h3 class="text-xl font-bold text-white">Alterar Credenciais de Acesso</h3>
+                <button onclick="closePasswordModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </div>
+            <form onsubmit="saveNewCredentials(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Novo Usuário</label>
+                    <input type="text" id="new-user" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500" placeholder="Digite o novo usuário">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Nova Senha</label>
+                    <input type="password" id="new-pass" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500" placeholder="Digite a nova senha">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Confirmar Nova Senha</label>
+                    <input type="password" id="confirm-pass" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500" placeholder="Confirme a nova senha">
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closePasswordModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg text-sm">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- MODAL DE GERENCIAR BANNERS -->
+    <div id="banner-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-4">
+                <h3 class="text-xl font-bold text-white">Gerenciar Banners do Slideshow</h3>
+                <button onclick="closeBannerModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </div>
+            
+            <form onsubmit="saveBanner(event)" class="space-y-4 mb-6 bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                <h4 class="text-sm font-bold text-purple-400 uppercase tracking-wider">Adicionar Novo Banner</h4>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Selecionar Foto do Banner (Arquivo)</label>
+                    <input type="file" id="banner-file" accept="image/*" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-500 cursor-pointer">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Tag / Destaque</label>
+                        <input type="text" id="banner-tag" placeholder="Ex: 🍔 Sabor Incomparável" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Título Principal</label>
+                        <input type="text" id="banner-titulo" placeholder="Ex: Burgers Na Brasa" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Subtítulo / Descrição</label>
+                    <input type="text" id="banner-sub" placeholder="Ex: Carne 100% Angus..." required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+                </div>
+                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 rounded-xl shadow-lg text-sm transition-all">
+                    Salvar e Adicionar Banner
+                </button>
+            </form>
+
+            <h4 class="text-sm font-bold text-slate-300 mb-3 uppercase tracking-wider">Banners Ativos</h4>
+            <div id="banners-list" class="space-y-3 max-h-60 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script>
+        function compressImage(inputElement, targetHiddenId, maxWidth = 800) {
+            const file = inputElement.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    document.getElementById(targetHiddenId).value = compressedDataUrl;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadBrandConfig();
+            loadCategoriesSelect();
+            if(localStorage.getItem('admin_logged') === 'true') {
+                showAdminPanel();
+            }
+        });
+
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('mobile-sidebar');
+            const content = document.getElementById('mobile-sidebar-content');
+            
+            if (sidebar.classList.contains('hidden')) {
+                sidebar.classList.remove('hidden');
+                setTimeout(() => {
+                    content.classList.remove('-translate-x-full');
+                }, 10);
+            } else {
+                content.classList.add('-translate-x-full');
+                setTimeout(() => {
+                    sidebar.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        async function loadBrandConfig() {
+            try {
+                const res = await fetch(window.location.origin + '/api/configuracoes');
+                const config = await res.json();
+                if(config) {
+                    const storeName = config.nome_loja || 'Burger & Cia';
+                    const storeLogo = config.logo_url || '';
+
+                    const brandEl = document.getElementById('header-brand-name');
+                    if(brandEl) brandEl.textContent = storeName;
+
+                    const iconEl = document.getElementById('header-logo-icon');
+                    const imgEl = document.getElementById('header-logo-img');
+                    const containerEl = document.getElementById('header-logo-container');
+
+                    if(storeLogo.trim() !== '') {
+                        if(imgEl) {
+                            imgEl.src = storeLogo;
+                            imgEl.classList.remove('hidden');
+                        }
+                        if(iconEl) iconEl.classList.add('hidden');
+                        if(containerEl) containerEl.classList.remove('bg-gradient-to-tr', 'from-red-600', 'to-amber-500');
+                    } else {
+                        if(imgEl) imgEl.classList.add('hidden');
+                        if(iconEl) iconEl.classList.remove('hidden');
+                    }
+                }
+            } catch (err) {
+                console.error('Erro ao carregar configs da marca:', err);
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const usuario = document.getElementById('user').value;
+            const senha = document.getElementById('pass').value;
+
+            try {
+                const res = await fetch(window.location.origin + '/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, senha })
+                });
+                const data = await res.json();
+
+                if(data.success) {
+                    localStorage.setItem('admin_logged', 'true');
+                    showAdminPanel();
+                } else {
+                    alert('Usuário ou senha incorretos!');
+                }
+            } catch (err) {
+                console.error('Erro ao autenticar:', err);
+                alert('Erro ao conectar com o servidor.');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('admin_logged');
+            document.getElementById('admin-panel').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
+
+        function showAdminPanel() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('admin-panel').classList.remove('hidden');
+            loadBrandConfig();
+            loadCategoriesSelect();
+            renderAdminProducts();
+        }
+
+        async function loadCategoriesSelect(selectedCategory = '') {
+            try {
+                const res = await fetch(window.location.origin + '/api/categorias');
+                const categorias = await res.json();
+                
+                // Preenche o select do modal de produtos
+                const selectProd = document.getElementById('prod-category');
+                if(selectProd && Array.isArray(categorias)) {
+                    selectProd.innerHTML = categorias.map(cat => `
+                        <option value="${cat.nome}" ${selectedCategory.toLowerCase() === cat.nome.toLowerCase() ? 'selected' : ''}>${cat.nome}</option>
+                    `).join('');
+                }
+
+                // Preenche o select de filtro no topo da tabela
+                const selectFilter = document.getElementById('filter-category');
+                if(selectFilter && Array.isArray(categorias)) {
+                    const currentFilterVal = selectFilter.value;
+                    selectFilter.innerHTML = `<option value="">Todas as Categorias</option>` + 
+                        categorias.map(cat => `
+                            <option value="${cat.nome}" ${currentFilterVal.toLowerCase() === cat.nome.toLowerCase() ? 'selected' : ''}>${cat.nome}</option>
+                        `).join('');
+                }
+            } catch (err) {
+                console.error('Erro ao carregar categorias:', err);
+            }
+        }
+
+        async function getMenuItems() {
+            try {
+                const response = await fetch(window.location.origin + '/api/produtos');
+                if (!response.ok) throw new Error('Erro ao buscar produtos');
+                const data = await response.json();
+                return data || [];
+            } catch (error) {
+                console.error('Erro:', error);
+                return [];
+            }
+        }
+
+        async function renderAdminProducts() {
+            let products = await getMenuItems();
+            const searchVal = document.getElementById('search-input').value.toLowerCase().trim();
+            const categoryFilterVal = document.getElementById('filter-category').value.toLowerCase().trim();
+
+            if(searchVal !== '') {
+                products = products.filter(item => item.name.toLowerCase().includes(searchVal));
+            }
+
+            if(categoryFilterVal !== '') {
+                products = products.filter(item => item.category && item.category.toLowerCase() === categoryFilterVal);
+            }
+
+            const tbody = document.getElementById('admin-products-list');
+
+            if(products.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">Nenhum produto encontrado.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = products.map(item => `
+                <tr class="hover:bg-slate-800/40 transition-colors">
+                    <td class="p-4 font-bold text-amber-400">#${item.ordem !== undefined && item.ordem !== null ? item.ordem : 0}</td>
+                    <td class="p-4 flex items-center space-x-3">
+                        <img src="${item.image}" alt="" class="w-10 h-10 rounded-lg object-cover border border-slate-700">
+                        <span class="font-bold text-white">${item.name}</span>
+                    </td>
+                    <td class="p-4 capitalize text-slate-300"><span class="bg-slate-800 px-2.5 py-1 rounded-lg text-xs border border-slate-700">${item.category}</span></td>
+                    <td class="p-4 font-semibold text-emerald-400">R$ ${Number(item.price).toFixed(2).replace('.', ',')}</td>
+                    <td class="p-4 text-slate-400 max-w-xs truncate">${item.desc}</td>
+                    <td class="p-4 text-right space-x-2">
+                        <button onclick="openProductModal(${item.id})" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2 rounded-xl border border-slate-700"><i class="fa-solid fa-pen text-xs"></i></button>
+                        <button onclick="deleteProduct(${item.id})" class="bg-slate-800 hover:bg-slate-700 text-red-400 p-2 rounded-xl border border-slate-700"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function openProductModal(id = null) {
+            await loadCategoriesSelect();
+            document.getElementById('product-modal').classList.remove('hidden');
+            if(id) {
+                document.getElementById('modal-title').textContent = 'Editar Produto';
+                const products = await getMenuItems();
+                const p = products.find(i => i.id === id);
+                if(p) {
+                    document.getElementById('prod-id').value = p.id;
+                    document.getElementById('prod-name').value = p.name;
+                    document.getElementById('prod-ordem').value = p.ordem !== undefined && p.ordem !== null ? p.ordem : 0;
+                    await loadCategoriesSelect(p.category);
+                    document.getElementById('prod-price').value = p.price;
+                    document.getElementById('prod-image-base64').value = p.image;
+                    document.getElementById('prod-desc').value = p.desc;
+                }
+            } else {
+                document.getElementById('modal-title').textContent = 'Novo Produto';
+                document.getElementById('prod-id').value = '';
+                document.getElementById('prod-ordem').value = '0';
+                document.getElementById('prod-image-base64').value = '';
+                document.querySelector('#product-modal form').reset();
+            }
+        }
+
+        function closeProductModal() {
+            document.getElementById('product-modal').classList.add('hidden');
+        }
+
+        async function saveProduct(e) {
+            e.preventDefault();
+            const id = document.getElementById('prod-id').value;
+            const name = document.getElementById('prod-name').value;
+            const ordem = parseInt(document.getElementById('prod-ordem').value) || 0;
+            const category = document.getElementById('prod-category').value;
+            const price = parseFloat(document.getElementById('prod-price').value);
+            const image = document.getElementById('prod-image-base64').value;
+            const desc = document.getElementById('prod-desc').value;
+            
+            if(!image) return alert('Por favor, selecione uma foto para o produto.');
+
+            const productData = { name, ordem, category, price, image, desc };
+
+            try {
+                let response;
+                if(id) {
+                    response = await fetch(window.location.origin + `/api/produtos/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(productData)
+                    });
+                } else {
+                    response = await fetch(window.location.origin + '/api/produtos', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(productData)
+                    });
+                }
+
+                if(!response.ok) throw new Error('Erro ao salvar no servidor');
+
+                closeProductModal();
+                renderAdminProducts();
+                alert('Produto salvo com sucesso!');
+            } catch (error) {
+                console.error(error);
+                alert('Erro ao salvar produto.');
+            }
+        }
+
+        async function deleteProduct(id) {
+            if(confirm('Tem certeza que deseja excluir este produto?')) {
+                try {
+                    const response = await fetch(window.location.origin + `/api/produtos/${id}`, {
+                        method: 'DELETE'
+                    });
+                    if(!response.ok) throw new Error('Erro ao excluir');
+                    renderAdminProducts();
+                } catch (error) {
+                    console.error(error);
+                    alert('Erro ao excluir produto.');
+                }
+            }
+        }
+
+        // FUNÇÃO APENAS PARA VISUALIZAR AS CATEGORIAS (BOTÃO DO TOPO)
+        async function openViewCategoriesModal() {
+            document.getElementById('view-categories-modal').classList.remove('hidden');
+            try {
+                const res = await fetch(window.location.origin + '/api/categorias');
+                const categories = await res.json();
+                const listEl = document.getElementById('view-categories-list');
+                
+                if(!Array.isArray(categories) || categories.length === 0) {
+                    listEl.innerHTML = `<p class="text-slate-500 text-xs text-center py-4">Nenhuma categoria cadastrada.</p>`;
+                    return;
+                }
+
+                listEl.innerHTML = categories.map(cat => `
+                    <div class="flex items-center space-x-3 bg-slate-800 p-3 rounded-xl border border-slate-700">
+                        <img src="${cat.imagem || 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=200&q=80'}" class="w-12 h-12 rounded-lg object-cover border border-slate-600">
+                        <div>
+                            <h5 class="text-sm font-bold text-white capitalize">${cat.nome}</h5>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Erro ao carregar categorias:', err);
+            }
+        }
+
+        function closeViewCategoriesModal() {
+            document.getElementById('view-categories-modal').classList.add('hidden');
+        }
+
+        // FUNÇÕES PARA GERENCIAR CATEGORIAS (ADICIONAR/EDITAR/EXCLUIR)
+        function openCategoryModal() {
+            document.getElementById('category-modal').classList.remove('hidden');
+            resetCategoryForm();
+            loadAdminCategories();
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('category-modal').classList.add('hidden');
+        }
+
+        function resetCategoryForm() {
+            document.getElementById('cat-id').value = '';
+            document.getElementById('cat-name').value = '';
+            document.getElementById('cat-file').value = '';
+            document.getElementById('category-form-heading').textContent = 'Adicionar Nova Categoria';
+            document.getElementById('cat-submit-btn').textContent = 'Salvar Categoria';
+            document.getElementById('cat-cancel-edit').classList.add('hidden');
+        }
+
+        async function loadAdminCategories() {
+            try {
+                const res = await fetch(window.location.origin + '/api/categorias');
+                const categories = await res.json();
+                const listEl = document.getElementById('categories-list');
+                
+                if(!Array.isArray(categories) || categories.length === 0) {
+                    listEl.innerHTML = `<p class="text-slate-500 text-xs text-center py-4">Nenhuma categoria cadastrada.</p>`;
+                    return;
+                }
+
+                listEl.innerHTML = categories.map(cat => `
+                    <div class="flex items-center justify-between bg-slate-800 p-3 rounded-xl border border-slate-700">
+                        <div class="flex items-center space-x-3">
+                            <img src="${cat.imagem || 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=200&q=80'}" class="w-12 h-12 rounded-lg object-cover border border-slate-600">
+                            <div>
+                                <h5 class="text-xs font-bold text-white capitalize">${cat.nome}</h5>
+                            </div>
+                        </div>
+                        <div class="space-x-1">
+                            <button onclick="editCategory(${cat.id}, '${cat.nome}')" class="bg-amber-500/15 hover:bg-amber-500/30 text-amber-400 p-2 rounded-lg border border-amber-500/20 text-xs transition-colors">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteCategory(${cat.id})" class="bg-red-500/15 hover:bg-red-500/30 text-red-400 p-2 rounded-lg border border-red-500/20 text-xs transition-colors">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Erro ao carregar categorias:', err);
+            }
+        }
+
+        function editCategory(id, nome) {
+            document.getElementById('cat-id').value = id;
+            document.getElementById('cat-name').value = nome;
+            document.getElementById('category-form-heading').textContent = 'Editar Categoria';
+            document.getElementById('cat-submit-btn').textContent = 'Atualizar Categoria';
+            document.getElementById('cat-cancel-edit').classList.remove('hidden');
+        }
+
+        async function saveCategory(e) {
+            e.preventDefault();
+            const id = document.getElementById('cat-id').value;
+            const nome = document.getElementById('cat-name').value.trim();
+            const fileInput = document.getElementById('cat-file');
+
+            if(!nome) return alert('Digite o nome da categoria.');
+
+            const proceedWithImage = (imagemBase64 = null) => {
+                const payload = { nome, imagem: imagemBase64 };
+                const url = id ? `${window.location.origin}/api/categorias/${id}` : `${window.location.origin}/api/categorias`;
+                const method = id ? 'PUT' : 'POST';
+
+                fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(res => {
+                    if(res.ok) {
+                        alert(id ? 'Categoria atualizada com sucesso!' : 'Categoria criada com sucesso!');
+                        resetCategoryForm();
+                        loadAdminCategories();
+                        loadCategoriesSelect();
+                    } else {
+                        alert('Erro ao salvar categoria.');
+                    }
+                }).catch(err => {
+                    console.error(err);
+                    alert('Erro de conexão ao salvar categoria.');
+                });
+            };
+
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onload = function(uploadEvent) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        const maxWidth = 800;
+                        if (width > maxWidth) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+                        proceedWithImage(compressedBase64);
+                    };
+                    img.src = uploadEvent.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                proceedWithImage(null);
+            }
+        }
+
+        async function deleteCategory(id) {
+            if(confirm('Tem certeza que deseja excluir esta categoria?')) {
+                try {
+                    await fetch(window.location.origin + `/api/categorias/${id}`, { method: 'DELETE' });
+                    loadAdminCategories();
+                    loadCategoriesSelect();
+                } catch (err) {
+                    console.error('Erro ao excluir categoria:', err);
+                }
+            }
+        }
+
+        // ==========================================
+        // GERENCIAMENTO DE BAIRROS E TAXAS (SUPABASE)
+        // ==========================================
+        function openBairrosModal() {
+            document.getElementById('bairros-modal').classList.remove('hidden');
+            resetBairroForm();
+            loadAdminBairros();
+        }
+
+        function closeBairrosModal() {
+            document.getElementById('bairros-modal').classList.add('hidden');
+        }
+
+        function resetBairroForm() {
+            document.getElementById('bairro-id').value = '';
+            document.getElementById('bairro-nome').value = '';
+            document.getElementById('bairro-taxa').value = '';
+            document.getElementById('bairro-form-heading').textContent = 'Adicionar Novo Bairro';
+            document.getElementById('bairro-submit-btn').textContent = 'Salvar Bairro';
+            document.getElementById('bairro-cancel-edit').classList.add('hidden');
+        }
+
+        async function loadAdminBairros() {
+            try {
+                const res = await fetch(window.location.origin + '/api/bairros');
+                const bairros = await res.json();
+                const listEl = document.getElementById('bairros-list');
+                
+                if(!Array.isArray(bairros) || bairros.length === 0) {
+                    listEl.innerHTML = `<p class="text-slate-500 text-xs text-center py-4">Nenhum bairro cadastrado.</p>`;
+                    return;
+                }
+
+                listEl.innerHTML = bairros.map(b => `
+                    <div class="flex items-center justify-between bg-slate-800 p-3 rounded-xl border border-slate-700">
+                        <div>
+                            <h5 class="text-xs font-bold text-white">${b.nome}</h5>
+                            <span class="text-[11px] text-amber-400 font-semibold">Taxa: R$ ${Number(b.taxa).toFixed(2).replace('.', ',')}</span>
+                        </div>
+                        <div class="space-x-1">
+                            <button onclick="editBairro(${b.id}, '${b.nome}', ${b.taxa})" class="bg-amber-500/15 hover:bg-amber-500/30 text-amber-400 p-2 rounded-lg border border-amber-500/20 text-xs transition-colors">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteBairro(${b.id})" class="bg-red-500/15 hover:bg-red-500/30 text-red-400 p-2 rounded-lg border border-red-500/20 text-xs transition-colors">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Erro ao carregar bairros:', err);
+            }
+        }
+
+        async function saveBairro(e) {
+            e.preventDefault();
+            const id = document.getElementById('bairro-id').value;
+            const nome = document.getElementById('bairro-nome').value.trim();
+            const taxa = parseFloat(document.getElementById('bairro-taxa').value) || 0;
+
+            if(!nome) return alert('Digite o nome do bairro.');
+
+            const payload = { nome, taxa };
+            const url = id ? `${window.location.origin}/api/bairros/${id}` : `${window.location.origin}/api/bairros`;
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if(res.ok) {
+                    alert(id ? 'Bairro atualizado com sucesso!' : 'Bairro adicionado com sucesso!');
+                    resetBairroForm();
+                    loadAdminBairros();
+                } else {
+                    alert('Erro ao salvar bairro.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro de conexão ao salvar bairro.');
+            }
+        }
+
+        function editBairro(id, nome, taxa) {
+            document.getElementById('bairro-id').value = id;
+            document.getElementById('bairro-nome').value = nome;
+            document.getElementById('bairro-taxa').value = taxa;
+            document.getElementById('bairro-form-heading').textContent = 'Editar Bairro';
+            document.getElementById('bairro-submit-btn').textContent = 'Atualizar Bairro';
+            document.getElementById('bairro-cancel-edit').classList.remove('hidden');
+        }
+
+        async function deleteBairro(id) {
+            if(confirm('Tem certeza que deseja excluir este bairro?')) {
+                try {
+                    await fetch(window.location.origin + `/api/bairros/${id}`, { method: 'DELETE' });
+                    loadAdminBairros();
+                } catch (err) {
+                    console.error('Erro ao excluir bairro:', err);
+                }
+            }
+        }
+        // ==========================================
+
+        // ==========================================
+        // GERENCIAMENTO DE ADICIONAIS POR CATEGORIA (SUPABASE)
+        // ==========================================
+        async function openAdicionaisModal() {
+            document.getElementById('adicionais-modal').classList.remove('hidden');
+            resetAdicionalForm();
+            await loadCategoriasParaSelectAdicional();
+            loadAdminAdicionais();
+        }
+
+        function closeAdicionaisModal() {
+            document.getElementById('adicionais-modal').classList.add('hidden');
+        }
+
+        function resetAdicionalForm() {
+            document.getElementById('adicional-id').value = '';
+            document.getElementById('adicional-nome').value = '';
+            document.getElementById('adicional-preco').value = '';
+            document.getElementById('adicional-categoria').value = '';
+            document.getElementById('containerItensEspecificos').style.display = 'none';
+            document.getElementById('listaCheckboxesItens').innerHTML = '';
+            document.getElementById('adicional-form-heading').textContent = 'Adicionar Novo Adicional';
+            document.getElementById('adicional-submit-btn').textContent = 'Salvar Adicional';
+            document.getElementById('adicional-cancel-edit').classList.add('hidden');
+        }
+
+        async function loadCategoriasParaSelectAdicional() {
+            try {
+                const res = await fetch(window.location.origin + '/api/categorias');
+                const categorias = await res.json();
+                const select = document.getElementById('adicional-categoria');
+                if(select && Array.isArray(categorias)) {
+                    select.innerHTML = `<option value="" disabled selected>Selecione a Categoria</option>` + 
+                        categorias.map(cat => `<option value="${cat.nome}">${cat.nome}</option>`).join('');
+                }
+            } catch(e) {
+                console.error('Erro ao carregar categorias para adicionais', e);
+            }
+        }
+
+        async function carregarItensDaCategoria(categoriaNome) {
+            const container = document.getElementById('containerItensEspecificos');
+            const listaDiv = document.getElementById('listaCheckboxesItens');
+            
+            listaDiv.innerHTML = '';
+
+            if (!categoriaNome) {
+                container.style.display = 'none';
+                return;
+            }
+
+            try {
+                const produtos = await getMenuItems();
+                const produtosDaCategoria = produtos.filter(p => p.category && p.category.toLowerCase() === categoriaNome.toLowerCase());
+
+                if (produtosDaCategoria.length === 0) {
+                    listaDiv.innerHTML = '<span style="color: #94a3b8; font-size: 12px;">Nenhum produto encontrado nesta categoria.</span>';
+                    container.style.display = 'block';
+                    return;
+                }
+
+                produtosDaCategoria.forEach(produto => {
+                    const label = document.createElement('label');
+                    label.style.display = 'flex';
+                    label.style.alignItems = 'center';
+                    label.style.marginBottom = '6px';
+                    label.style.cursor = 'pointer';
+                    label.style.fontSize = '12px';
+                    label.style.color = '#e2e8f0';
+                    
+                    label.innerHTML = `
+                        <input type="checkbox" name="produtosEspecificos" value="${produto.id}" style="margin-right: 8px; accent-color: #ef4444; width: 14px; height: 14px;">
+                        <span>${produto.name}</span>
+                    `;
+                    listaDiv.appendChild(label);
+                });
+
+                container.style.display = 'block';
+            } catch (err) {
+                console.error('Erro ao carregar itens da categoria:', err);
+            }
+        }
+
+        async function loadAdminAdicionais() {
+            try {
+                const res = await fetch(window.location.origin + '/api/adicionais');
+                const adicionais = await res.json();
+                const listEl = document.getElementById('adicionais-list');
+                
+                if(!Array.isArray(adicionais) || adicionais.length === 0) {
+                    listEl.innerHTML = `<p class="text-slate-500 text-xs text-center py-4">Nenhum adicional cadastrado.</p>`;
+                    return;
+                }
+
+                listEl.innerHTML = adicionais.map(ad => `
+                    <div class="flex items-center justify-between bg-slate-800 p-3 rounded-xl border border-slate-700">
+                        <div>
+                            <h5 class="text-xs font-bold text-white">${ad.nome} <span class="text-xs text-emerald-400 font-normal">(${ad.categoria || 'Geral'})</span></h5>
+                            <span class="text-[11px] text-rose-400 font-semibold">+ R$ ${Number(ad.preco).toFixed(2).replace('.', ',')}</span>
+                        </div>
+                        <button onclick="deleteAdicional(${ad.id})" class="bg-red-500/15 hover:bg-red-500/30 text-red-400 p-2 rounded-lg border border-red-500/20 text-xs transition-colors">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Erro ao carregar adicionais:', err);
+            }
+        }
+
+        async function saveAdicional(e) {
+            e.preventDefault();
+            const nome = document.getElementById('adicional-nome').value.trim();
+            const preco = parseFloat(document.getElementById('adicional-preco').value) || 0;
+            const categoriaSelect = document.getElementById('adicional-categoria');
+            const categoria = categoriaSelect.value.trim();
+
+            const checkboxesSelecionados = document.querySelectorAll('input[name="produtosEspecificos"]:checked');
+            const idsProdutosEspecificos = Array.from(checkboxesSelecionados).map(cb => cb.value);
+
+            if(!nome || !categoria) return alert('Preencha o nome e selecione a categoria.');
+
+            try {
+                const res = await fetch(window.location.origin + '/api/adicionais', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, preco, categoria, produtos_especificos: idsProdutosEspecificos })
+                });
+
+                if(res.ok) {
+                    alert('Adicional salvo com sucesso!');
+                    resetAdicionalForm();
+                    loadAdminAdicionais();
+                } else {
+                    alert('Erro ao salvar adicional.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro de conexão ao salvar adicional.');
+            }
+        }
+
+        async function deleteAdicional(id) {
+            if(confirm('Tem certeza que deseja excluir este adicional?')) {
+                try {
+                    await fetch(window.location.origin + `/api/adicionais/${id}`, { method: 'DELETE' });
+                    loadAdminAdicionais();
+                } catch (err) {
+                    console.error('Erro ao excluir adicional:', err);
+                }
+            }
+        }
+        // ==========================================
+
+        async function openConfigModal() {
+            document.getElementById('config-modal').classList.remove('hidden');
+            try {
+                const res = await fetch(window.location.origin + '/api/configuracoes');
+                const config = await res.json();
+                if(config) {
+                    document.getElementById('config-name').value = config.nome_loja || '';
+                    document.getElementById('config-logo-base64').value = config.logo_url || '';
+                    document.getElementById('config-whatsapp').value = config.whatsapp || '';
+                }
+            } catch(err) {
+                console.error(err);
+            }
+        }
+
+        function closeConfigModal() {
+            document.getElementById('config-modal').classList.add('hidden');
+        }
+
+        async function saveConfig(e) {
+            e.preventDefault();
+            let nome_loja = document.getElementById('config-name').value;
+            let logo_url = document.getElementById('config-logo-base64').value;
+            let whatsapp = document.getElementById('config-whatsapp').value;
+
+            try {
+                const res = await fetch(window.location.origin + '/api/configuracoes');
+                const config = await res.json() || {};
+
+                if (!logo_url || logo_url.trim() === '') {
+                    logo_url = config.logo_url || '';
+                }
+
+                await fetch(window.location.origin + '/api/configuracoes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        nome_loja, 
+                        logo_url, 
+                        whatsapp
+                    })
+                });
+            } catch (err) {
+                console.error('Erro ao salvar no servidor:', err);
+            }
+
+            loadBrandConfig();
+            closeConfigModal();
+            alert('Configurações salvas com sucesso!');
+        }
+
+        function openChangePasswordModal() {
+            document.getElementById('password-modal').classList.remove('hidden');
+            document.getElementById('new-user').value = '';
+            document.getElementById('new-pass').value = '';
+            document.getElementById('confirm-pass').value = '';
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.add('hidden');
+        }
+
+        async function saveNewCredentials(e) {
+            e.preventDefault();
+            const novoUsuario = document.getElementById('new-user').value.trim();
+            const p1 = document.getElementById('new-pass').value;
+            const p2 = document.getElementById('confirm-pass').value;
+
+            if (p1 !== p2) {
+                alert('As senhas não coincidem!');
+                return;
+            }
+
+            try {
+                const response = await fetch(window.location.origin + '/api/admin/alterar-credenciais', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ novoUsuario, novaSenha: p1 })
+                });
+
+                const data = await response.json();
+                if(data.success) {
+                    closePasswordModal();
+                    alert('Credenciais alteradas e salvas com sucesso !');
+                } else {
+                    alert('Erro ao salvar credenciais: ' + data.message);
+                }
+            } catch (err) {
+                console.error('Erro ao alterar credenciais:', err);
+                alert('Erro de conexão ao salvar.');
+            }
+        }
+
+        function openBannerModal() {
+            document.getElementById('banner-modal').classList.remove('hidden');
+            loadAdminBanners();
+        }
+
+        function closeBannerModal() {
+            document.getElementById('banner-modal').classList.add('hidden');
+        }
+
+        async function loadAdminBanners() {
+            try {
+                const res = await fetch(window.location.origin + '/api/banners');
+                const banners = await res.json();
+                const listEl = document.getElementById('banners-list');
+                
+                if(!Array.isArray(banners) || banners.length === 0) {
+                    listEl.innerHTML = `<p class="text-slate-500 text-xs text-center py-4">Nenhum banner cadastrado.</p>`;
+                    return;
+                }
+
+                listEl.innerHTML = banners.map(b => `
+                    <div class="flex items-center justify-between bg-slate-800 p-3 rounded-xl border border-slate-700">
+                        <div class="flex items-center space-x-3">
+                            <img src="${b.imagem}" class="w-12 h-12 rounded-lg object-cover border border-slate-600">
+                            <div>
+                                <h5 class="text-xs font-bold text-white">${b.titulo || 'Sem Título'}</h5>
+                                <p class="text-[10px] text-slate-400">${b.subtitulo || ''}</p>
+                            </div>
+                        </div>
+                        <button onclick="deleteBanner(${b.id})" class="bg-red-500/15 hover:bg-red-500/30 text-red-400 p-2 rounded-lg border border-red-500/20 text-xs transition-colors">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Erro ao carregar banners:', err);
+            }
+        }
+
+        async function saveBanner(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('banner-file');
+            const tag = document.getElementById('banner-tag').value.trim();
+            const titulo = document.getElementById('banner-titulo').value.trim();
+            const subtitulo = document.getElementById('banner-sub').value.trim();
+
+            if (!fileInput.files || !fileInput.files[0]) {
+                return alert('Por favor, selecione uma foto para o banner.');
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(uploadEvent) {
+                const img = new Image();
+                img.onload = async function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxWidth = 1000;
+
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const imagemBase64 = canvas.toDataURL('image/jpeg', 0.75);
+
+                    try {
+                        const res = await fetch(window.location.origin + '/api/banners', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ imagem: imagemBase64, titulo, subtitulo, tag })
+                        });
+
+                        if(res.ok) {
+                            alert('Banner adicionado com sucesso!');
+                            document.querySelector('#banner-modal form').reset();
+                            loadAdminBanners();
+                        } else {
+                            alert('Erro ao salvar banner.');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro de conexão ao salvar banner.');
+                    }
+                };
+                img.src = uploadEvent.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function deleteBanner(id) {
+            if(confirm('Tem certeza que deseja excluir este banner?')) {
+                try {
+                    await fetch(window.location.origin + `/api/banners/${id}`, { method: 'DELETE' });
+                    loadAdminBanners();
+                } catch (err) {
+                    console.error('Erro ao excluir:', err);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
